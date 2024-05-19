@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
+import 'package:hehe/UI/mainScreen.dart';
 import 'package:hehe/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 const users =  {
@@ -63,7 +64,7 @@ class LoginScreen extends StatelessWidget {
       onSignup: _signupUser,
       onSubmitAnimationCompleted: () {
         Navigator.of(context).pushReplacement(MaterialPageRoute(
-          builder: (context) => const MyApp(),
+          builder: (context) => const MainScreen(),
         ));
       },
       onRecoverPassword: _recoverPassword,

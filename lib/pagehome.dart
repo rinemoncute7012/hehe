@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hehe/Logininterface/Loginscreen.dart';
+import 'package:hehe/UI/mainScreen.dart';
 
 
 class PageHome extends StatelessWidget {
@@ -20,6 +21,7 @@ class PageHome extends StatelessWidget {
                 .center,
             children: [
               _buildButton(context,label: "Login Screen", destination: LoginScreen()),
+              _buildButton(context,label: "First Screen", destination: MainScreen()),
             ],
           ),
         ),
