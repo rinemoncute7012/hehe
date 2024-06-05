@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_login/flutter_login.dart';
 import 'package:hehe/UI/mainScreen.dart';
-import 'package:hehe/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 const users =  {
   'dribbble@gmail.com': '12345',

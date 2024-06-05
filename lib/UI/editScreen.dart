@@ -1,116 +1,186 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'mainScreen.dart';
 
 class EditScreen extends StatefulWidget {
   final Category category;
   final Function(String) onCategoryUpdated;
-  final Function(int, String, String) onTaskUpdated; // Thêm tham số cho nhãn
+  final Function(int, String, DateTime, String) onTaskUpdated; // Cập nhật kiểu tham số truyền vào
+  final Function onDeleteCategory;
 
   const EditScreen({
+    Key? key,
     required this.category,
     required this.onCategoryUpdated,
     required this.onTaskUpdated,
-    Key? key,
+    required this.onDeleteCategory,
   }) : super(key: key);
 
   @override
-  _EditScreenState createState() => _EditScreenState();
+  State<EditScreen> createState() => _EditScreenState();
 }
 
 class _EditScreenState extends State<EditScreen> {
-  late TextEditingController _categoryController;
-  late List<TextEditingController> _taskControllers;
-  late String _selectedLabel; // Thêm biến chứa nhãn được chọn
-
-  List<String> _labels = ["Quan trọng", "Bình thường", "Không quan trọng"]; // Danh sách các nhãn có sẵn
+  late String _categoryTitle;
 
   @override
   void initState() {
     super.initState();
-    _categoryController = TextEditingController(text: widget.category.title);
-    _taskControllers = widget.category.tasks
-        .map((task) => TextEditingController(text: task.title))
-        .toList();
-    _selectedLabel = _labels[0]; // Mặc định chọn nhãn đầu tiên
+    _categoryTitle = widget.category.title;
   }
 
-  @override
-  void dispose() {
-    _categoryController.dispose();
-    for (var controller in _taskControllers) {
-      controller.dispose();
-    }
-    super.dispose();
+  void _updateTask(int taskIndex, String newTask, DateTime newDateTime, String newImportance) {
+    widget.onTaskUpdated(taskIndex, newTask, newDateTime, newImportance);
   }
 
-  void _saveCategory() {
-    widget.onCategoryUpdated(_categoryController.text);
-    for (int i = 0; i < _taskControllers.length; i++) {
-      widget.onTaskUpdated(i, _taskControllers[i].text, _selectedLabel); // Thêm nhãn vào tham số truyền vào
-    }
-    Navigator.of(context).pop();
-  }
+  void _showEditTaskDialog(int taskIndex) {
+    String newTaskTitle = widget.category.tasks[taskIndex].title;
+    DateTime selectedDate = widget.category.tasks[taskIndex].dateTime;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(selectedDate);
+    String selectedImportance = widget.category.tasks[taskIndex].importance;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chỉnh sửa danh mục và công việc'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveCategory,
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Chỉnh sửa công việc'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: _categoryController,
-              decoration: const InputDecoration(labelText: 'Tên danh mục'),
+              onChanged: (value) {
+                newTaskTitle = value;
+              },
+              controller: TextEditingController(text: newTaskTitle),
+              decoration: const InputDecoration(hintText: 'Tên công việc'),
             ),
-            const SizedBox(height: 16),
-            DropdownButton<String>( // Thêm DropdownButton để chọn nhãn
-              value: _selectedLabel,
+            ElevatedButton(
+              onPressed: () async {
+                final DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (pickedDate != null) {
+                  setState(() {
+                    selectedDate = pickedDate;
+                  });
+                }
+              },
+              child: const Text('Chọn ngày'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final TimeOfDay? pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: selectedTime,
+                );
+                if (pickedTime != null) {
+                  setState(() {
+                    selectedTime = pickedTime;
+                  });
+                }
+              },
+              child: const Text('Chọn giờ'),
+            ),
+            DropdownButton<String>(
+              value: selectedImportance,
               onChanged: (String? newValue) {
                 setState(() {
-                  _selectedLabel = newValue!;
+                  selectedImportance = newValue!;
                 });
               },
-              items: _labels.map<DropdownMenuItem<String>>((String value) {
+              items: ["Quan trọng", "Bình thường", "Không quan trọng"]
+                  .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _taskControllers.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: TextField(
-                      controller: _taskControllers[index],
-                      decoration: InputDecoration(
-                        labelText: 'Công việc ${index + 1}',
-                        // Thay đổi màu sắc dựa trên nhãn được chọn
-                        fillColor: _selectedLabel == "Quan trọng"
-                            ? Colors.red
-                            : _selectedLabel == "Bình thường"
-                            ? Colors.yellow
-                            : Colors.white,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (newTaskTitle.isNotEmpty) {
+                final DateTime taskDateTime = DateTime(
+                  selectedDate.year,
+                  selectedDate.month,
+                  selectedDate.day,
+                  selectedTime.hour,
+                  selectedTime.minute,
+                );
+                _updateTask(taskIndex, newTaskTitle, taskDateTime, selectedImportance);
+              }
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cập nhật'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Chỉnh sửa danh mục'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              widget.onDeleteCategory();
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              onChanged: (value) {
+                _categoryTitle = value;
+              },
+              controller: TextEditingController(text: _categoryTitle),
+              decoration: const InputDecoration(hintText: 'Tên danh mục'),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.category.tasks.length,
+              itemBuilder: (context, index) {
+                final task = widget.category.tasks[index];
+                return ListTile(
+                  title: Text(task.title),
+                  subtitle: Text(DateFormat('yyyy-MM-dd – kk:mm').format(task.dateTime)),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      _showEditTaskDialog(index);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          widget.onCategoryUpdated(_categoryTitle);
+          Navigator.of(context).pop();
+        },
+        child: const Icon(Icons.save),
       ),
     );
   }
