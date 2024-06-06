@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:hehe/services/setting_notifications.dart';// Thêm dòng này để import NotificationService
 
 import 'editScreen.dart';
 
@@ -15,12 +16,23 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   final List<Category> _categories = [];
   final List<String> _labels = ["Quan trọng", "Bình thường", "Không quan trọng"];
+  final NotificationService _notificationService = NotificationService(); // Khởi tạo NotificationService
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        print('Đang khởi tạo thông báo...');
+        await _notificationService.initialize();
+        print('Khởi tạo thông báo thành công');
+      } catch (e) {
+        print('Error initializing notifications: $e');
+      }
+    });
     _loadData();
   }
+
 
   void _showDeleteConfirmationDialog(BuildContext context, Function onConfirmed) {
     showDialog(
@@ -81,7 +93,24 @@ class _MainScreenState extends State<MainScreen> {
       );
     });
     _saveData();
+    // Lên lịch thông báo cho công việc mới
+    final int taskId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    print('Đang lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
+    _notificationService.scheduleNotification(
+      taskId,
+      taskTitle,
+      'Thời gian: ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}',
+      taskDateTime,
+    );
+    _notificationService.schedulePreNotifications(
+      taskId,
+      taskTitle,
+      'Thời gian: ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}',
+      taskDateTime,
+    );
+    print('Đã lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
   }
+
 
   void _updateCategory(int index, String newTitle) {
     setState(() {
@@ -97,7 +126,24 @@ class _MainScreenState extends State<MainScreen> {
       _categories[categoryIndex].tasks[taskIndex].importance = newImportance;
     });
     _saveData();
+    // Lên lịch lại thông báo cho công việc đã cập nhật
+    final Task updatedTask = _categories[categoryIndex].tasks[taskIndex];
+    final int taskId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    print('Đang lên lịch thông báo cho công việc đã cập nhật: ${updatedTask.title}');
+    _notificationService.scheduleNotification(
+      taskId,
+      updatedTask.title,
+      'Thời gian: ${DateFormat('yyyy-MM-dd – kk:mm').format(updatedTask.dateTime)}',
+      updatedTask.dateTime,
+    );
+    _notificationService.schedulePreNotifications(
+      taskId,
+      updatedTask.title,
+      'Thời gian: ${DateFormat('yyyy-MM-dd – kk:mm').format(updatedTask.dateTime)}',
+      updatedTask.dateTime,
+    );
   }
+
 
   void _showAddCategoryDialog() {
     String newCategoryTitle = '';
@@ -231,27 +277,30 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showEditScreen(int categoryIndex) {
-    Navigator.of(context).push(MaterialPageRoute(
+    if (_categories.isNotEmpty && categoryIndex >= 0 && categoryIndex < _categories.length) {
+      Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => EditScreen(
-        category: _categories[categoryIndex],
-        onCategoryUpdated: (newTitle) {
-      _updateCategory(categoryIndex, newTitle);
-    },
-    onTaskUpdated: (taskIndex, newTask, newDateTime, newImportance) {
-    _updateTask(categoryIndex, taskIndex, newTask, newDateTime,
-        newImportance);
-    },
+          category: _categories[categoryIndex],
+          onCategoryUpdated: (newTitle) {
+            _updateCategory(categoryIndex, newTitle);
+          },
+          onTaskUpdated: (taskIndex, newTask, newDateTime, newImportance) {
+            _updateTask(categoryIndex, taskIndex, newTask, newDateTime, newImportance);
+          },
           onDeleteCategory: () {
             _deleteCategory(categoryIndex);
           },
         ),
-    )).then((value) {
-      setState(() {
-        _categories[categoryIndex] = value as Category;
+      )).then((value) {
+        setState(() {
+          _categories[categoryIndex] = value as Category;
+        });
+        _saveData();
       });
-      _saveData();
-    });
+    } else {
+    }
   }
+
 
   Color getColorForImportance(String importance) {
     switch (importance) {
