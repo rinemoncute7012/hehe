@@ -1,21 +1,16 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:hehe/services/setting_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:hehe/Model/category_task.dart';// Đảm bảo import đúng từ file model
-
 import 'editScreen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
-
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
-
 class _MainScreenState extends State<MainScreen> {
   final List<Category> _categories = [];
   final List<String> _labels = [
@@ -23,8 +18,7 @@ class _MainScreenState extends State<MainScreen> {
     "Bình thường",
     "Không quan trọng"
   ];
-  final NotificationService _notificationService =
-  NotificationService();
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
