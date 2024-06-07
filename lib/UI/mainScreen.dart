@@ -40,6 +40,9 @@ class _MainScreenState extends State<MainScreen> {
     });
     _loadData();
   }
+  int _countCompletedTasks(Category category) {
+    return category.tasks.where((task) => task.completed).length;
+  }
 
   void _showDeleteConfirmationDialog(
       BuildContext context, Function onConfirmed) {
@@ -350,8 +353,34 @@ class _MainScreenState extends State<MainScreen> {
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final category = _categories[index];
+          final completedTasks = _countCompletedTasks(category);
+          final totalTasks = category.tasks.length;
+          String completionStatus = '';
+
+          if (completedTasks == 0) {
+            completionStatus = '(chưa làm)';
+          } else if (completedTasks > 0 && completedTasks <= totalTasks ~/ 3) {
+            completionStatus = '(lười biếng)';
+          } else if (completedTasks > totalTasks ~/ 3 && completedTasks <= totalTasks * 2 ~/ 3) {
+            completionStatus = '(khá tốt)';
+          } else if (completedTasks == totalTasks) {
+            completionStatus = '(hoàn thành)';
+          }
+
           return ExpansionTile(
-            title: Text(category.title),
+            title: Row(
+              children: [
+                Text(category.title),
+                SizedBox(width: 10),
+                Text(
+                  '$completedTasks/$totalTasks $completionStatus',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
             children: category.tasks
                 .asMap()
                 .entries
@@ -449,6 +478,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+
 }
 
 void main() {
