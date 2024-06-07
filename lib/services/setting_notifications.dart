@@ -77,6 +77,11 @@ class NotificationService {
         await scheduleNotification(id + 4, title,
             'Thông báo trước 12 giờ: $body', twelveHoursBefore);
       }
+      DateTime oneminutesbefore = scheduledDate.subtract(Duration(minutes: 1));
+      if (oneminutesbefore.isAfter(DateTime.now())) {
+        await scheduleNotification(id + 5, title,
+            'Thông báo trước 1 phut: $body', oneminutesbefore);
+      }
     }
   }
 }

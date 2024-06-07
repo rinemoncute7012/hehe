@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'mainScreen.dart';
+import 'package:hehe/Model/category_task.dart'; //
 
 class EditScreen extends StatefulWidget {
   final Category category;

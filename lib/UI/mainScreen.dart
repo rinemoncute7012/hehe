@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hehe/services/setting_notifications.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:hehe/services/setting_notifications.dart';// Thêm dòng này để import NotificationService
+
+import 'package:hehe/Model/category_task.dart';// Đảm bảo import đúng từ file model
 
 import 'editScreen.dart';
 
@@ -15,8 +18,13 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final List<Category> _categories = [];
-  final List<String> _labels = ["Quan trọng", "Bình thường", "Không quan trọng"];
-  final NotificationService _notificationService = NotificationService(); // Khởi tạo NotificationService
+  final List<String> _labels = [
+    "Quan trọng",
+    "Bình thường",
+    "Không quan trọng"
+  ];
+  final NotificationService _notificationService =
+  NotificationService();
 
   @override
   void initState() {
@@ -33,8 +41,8 @@ class _MainScreenState extends State<MainScreen> {
     _loadData();
   }
 
-
-  void _showDeleteConfirmationDialog(BuildContext context, Function onConfirmed) {
+  void _showDeleteConfirmationDialog(
+      BuildContext context, Function onConfirmed) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -86,16 +94,18 @@ class _MainScreenState extends State<MainScreen> {
     _saveData();
   }
 
-  void _addTask(String categoryTitle, String taskTitle, DateTime taskDateTime, String importance) {
+  void _addTask(String categoryTitle, String taskTitle, DateTime taskDateTime,
+      String importance) {
     setState(() {
       _categories.firstWhere((cat) => cat.title == categoryTitle).tasks.add(
-        Task(taskTitle, taskDateTime, importance, completed: false), // Thêm thuộc tính completed với giá trị mặc định là false
+        Task(taskTitle, taskDateTime, importance,
+            completed: false),
       );
     });
     _saveData();
-    // Lên lịch thông báo cho công việc mới
     final int taskId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-    print('Đang lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
+    print(
+        'Đang lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
     _notificationService.scheduleNotification(
       taskId,
       taskTitle,
@@ -108,9 +118,9 @@ class _MainScreenState extends State<MainScreen> {
       'Thời gian: ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}',
       taskDateTime,
     );
-    print('Đã lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
+    print(
+        'Đã lên lịch thông báo cho công việc: $taskTitle vào ${DateFormat('yyyy-MM-dd – kk:mm').format(taskDateTime)}');
   }
-
 
   void _updateCategory(int index, String newTitle) {
     setState(() {
@@ -119,17 +129,18 @@ class _MainScreenState extends State<MainScreen> {
     _saveData();
   }
 
-  void _updateTask(int categoryIndex, int taskIndex, String newTask, DateTime newDateTime, String newImportance) {
+  void _updateTask(int categoryIndex, int taskIndex, String newTask,
+      DateTime newDateTime, String newImportance) {
     setState(() {
       _categories[categoryIndex].tasks[taskIndex].title = newTask;
       _categories[categoryIndex].tasks[taskIndex].dateTime = newDateTime;
       _categories[categoryIndex].tasks[taskIndex].importance = newImportance;
     });
     _saveData();
-    // Lên lịch lại thông báo cho công việc đã cập nhật
     final Task updatedTask = _categories[categoryIndex].tasks[taskIndex];
     final int taskId = DateTime.now().millisecondsSinceEpoch.remainder(100000);
-    print('Đang lên lịch thông báo cho công việc đã cập nhật: ${updatedTask.title}');
+    print(
+        'Đang lên lịch thông báo cho công việc đã cập nhật: ${updatedTask.title}');
     _notificationService.scheduleNotification(
       taskId,
       updatedTask.title,
@@ -184,90 +195,100 @@ class _MainScreenState extends State<MainScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Thêm công việc mới'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              onChanged: (value) {
-                newTaskTitle = value;
-              },
-              decoration: const InputDecoration(hintText: 'Tên công việc'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2101),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    selectedDate = pickedDate;
-                  });
-                }
-              },
-              child: const Text('Chọn ngày'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final TimeOfDay? pickedTime = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (pickedTime != null) {
-                  setState(() {
-                    selectedTime = pickedTime;
-                  });
-                }
-              },
-              child: const Text('Chọn giờ'),
-            ),
-            DropdownButton<String>(
-              value: selectedImportance,
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedImportance = newValue!;
-                });
-              },
-              items: _labels.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (newTaskTitle.isNotEmpty && selectedDate != null && selectedTime != null) {
-                final DateTime taskDateTime = DateTime(
-                  selectedDate!.year,
-                  selectedDate!.month,
-                  selectedDate!.day,
-                  selectedTime!.hour,
-                  selectedTime!.minute,
-                );
-                _addTask(categoryTitle, newTaskTitle, taskDateTime, selectedImportance);
-              }
-              Navigator.of(context).pop();
-            },
-            child: const Text('Thêm'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Thêm công việc mới'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    onChanged: (value) {
+                      newTaskTitle = value;
+                    },
+                    decoration: const InputDecoration(hintText: 'Tên công việc'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          selectedDate = pickedDate;
+                        });
+                      }
+                    },
+                    child: const Text('Chọn ngày'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (pickedTime != null) {
+                        setState(() {
+                          selectedTime = pickedTime;
+                        });
+                      }
+                    },
+                    child: const Text('Chọn giờ'),
+                  ),
+                  DropdownButton<String>(
+                    value: selectedImportance,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedImportance = newValue!;
+                      });
+                    },
+                    items: _labels.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Hủy'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    if (newTaskTitle.isNotEmpty &&
+                        selectedDate != null &&
+                        selectedTime != null) {
+                      final DateTime taskDateTime = DateTime(
+                        selectedDate!.year,
+                        selectedDate!.month,
+                        selectedDate!.day,
+                        selectedTime!.hour,
+                        selectedTime!.minute,
+                      );
+                      _addTask(categoryTitle, newTaskTitle, taskDateTime,
+                          selectedImportance);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('Thêm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
+
 
   void _deleteCategory(int categoryIndex) {
     setState(() {
@@ -277,30 +298,33 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _showEditScreen(int categoryIndex) {
-    if (_categories.isNotEmpty && categoryIndex >= 0 && categoryIndex < _categories.length) {
-      Navigator.of(context).push(MaterialPageRoute(
+    if (_categories.isNotEmpty &&
+        categoryIndex >= 0 &&
+        categoryIndex < _categories.length) {
+      Navigator.of(context)
+          .push(MaterialPageRoute(
         builder: (context) => EditScreen(
           category: _categories[categoryIndex],
           onCategoryUpdated: (newTitle) {
             _updateCategory(categoryIndex, newTitle);
           },
           onTaskUpdated: (taskIndex, newTask, newDateTime, newImportance) {
-            _updateTask(categoryIndex, taskIndex, newTask, newDateTime, newImportance);
+            _updateTask(
+                categoryIndex, taskIndex, newTask, newDateTime, newImportance);
           },
           onDeleteCategory: () {
             _deleteCategory(categoryIndex);
           },
         ),
-      )).then((value) {
+      ))
+          .then((value) {
         setState(() {
           _categories[categoryIndex] = value as Category;
         });
         _saveData();
       });
-    } else {
     }
   }
-
 
   Color getColorForImportance(String importance) {
     switch (importance) {
@@ -348,12 +372,13 @@ class _MainScreenState extends State<MainScreen> {
                   _saveData();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Đã xóa công việc'),
+                      content: const Text('Đã xóa công việc'),
                       action: SnackBarAction(
                         label: 'Hoàn tác',
                         onPressed: () {
                           setState(() {
-                            category.tasks.insert(entry.key, entry.value);
+                            category.tasks
+                                .insert(entry.key, entry.value);
                           });
                           _saveData();
                         },
@@ -366,21 +391,26 @@ class _MainScreenState extends State<MainScreen> {
                 title: Text(
                   entry.value.title,
                   style: TextStyle(
-                    color: getColorForImportance(entry.value.importance),
+                    color:
+                    getColorForImportance(entry.value.importance),
                     fontWeight: entry.value.importance == "Bình thường"
                         ? FontWeight.bold
                         : null,
                   ),
                 ),
                 subtitle: Text(
-                  DateFormat('yyyy-MM-dd – kk:mm').format(entry.value.dateTime),
+                  DateFormat('yyyy-MM-dd – kk:mm')
+                      .format(entry.value.dateTime),
                   style: TextStyle(
-                    color: getColorForImportance(entry.value.importance),
+                    color:
+                    getColorForImportance(entry.value.importance),
                   ),
                 ),
                 trailing: IconButton(
                   icon: Icon(
-                    entry.value.completed ? Icons.check_box : Icons.check_box_outline_blank,
+                    entry.value.completed
+                        ? Icons.check_box
+                        : Icons.check_box_outline_blank,
                     color: entry.value.completed ? Colors.green : null,
                   ),
                   onPressed: () {
@@ -417,50 +447,6 @@ class _MainScreenState extends State<MainScreen> {
         onPressed: _showAddCategoryDialog,
         child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-class Category {
-  String title;
-  final List<Task> tasks;
-
-  Category(this.title, this.tasks);
-
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'tasks': tasks.map((task) => task.toJson()).toList(),
-  };
-
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      json['title'],
-      (json['tasks'] as List<dynamic>).map((taskJson) => Task.fromJson(taskJson)).toList(),
-    );
-  }
-}
-
-class Task {
-  String title;
-  DateTime dateTime;
-  String importance;
-  bool completed; // Thuộc tính mới cho biết công việc đã hoàn thành hay chưa
-
-  Task(this.title, this.dateTime, this.importance, {this.completed = false}); // Thêm tham số mặc định cho completed
-
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'dateTime': dateTime.toIso8601String(),
-    'importance': importance,
-    'completed': completed, // Thêm completed vào dữ liệu JSON
-  };
-
-  factory Task.fromJson(Map<String, dynamic> json) {
-    return Task(
-      json['title'],
-      DateTime.parse(json['dateTime']),
-      json['importance'],
-      completed: json['completed'] ?? false, // Đảm bảo rằng completed có giá trị mặc định là false nếu không được cung cấp
     );
   }
 }
