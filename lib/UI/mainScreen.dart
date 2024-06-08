@@ -368,7 +368,7 @@ class _MainScreenState extends State<MainScreen> {
             Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context)
-            => StatisticsScreen(categories: [],)
+            => StatisticsScreen(categories: _categories,)
             ),);
           }, icon: Icon(Icons.stacked_bar_chart))
           

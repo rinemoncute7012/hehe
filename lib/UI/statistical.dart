@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:hehe/Model/category_task.dart';
+import 'package:hehe/Model/category_task.dart'; // Đảm bảo import model Category và Task từ file mainScreen.dart
 
 class StatisticsScreen extends StatefulWidget {
   final List<Category> categories;
