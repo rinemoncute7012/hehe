@@ -1,6 +1,7 @@
 // Các import cần thiết cho ứng dụng
 import 'dart:convert'; // Để sử dụng mã hóa và giải mã JSON
 import 'package:flutter/material.dart'; // Thư viện chính cho Flutter
+import 'package:hehe/UI/statistical.dart';
 import 'package:hehe/services/setting_notifications.dart'; // Import dịch vụ thông báo tùy chỉnh
 import 'package:intl/intl.dart'; // Để định dạng ngày và giờ
 import 'package:shared_preferences/shared_preferences.dart'; // Để lưu trữ dữ liệu trên thiết bị
@@ -362,6 +363,16 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text("Danh sách công việc"),
         backgroundColor: Theme.of(context).primaryColor,
+        actions: [
+          IconButton(onPressed: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context)
+            => StatisticsScreen(categories: [],)
+            ),);
+          }, icon: Icon(Icons.stacked_bar_chart))
+          
+        ],
       ),
       body: ListView.builder(
         itemCount: _categories.length, // Số lượng danh mục
